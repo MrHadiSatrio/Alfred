@@ -1,0 +1,25 @@
+ext {
+
+    // Alfred
+    alfredAnnotations = project(":annotations")
+    alfredCompiler = project(":compiler")
+
+    // Gradle Plugins
+    androidToolsPlugin = "com.android.tools.build:gradle:$androidGradleVersion"
+
+    // 1st Party Android Libraries
+    supportv4 = "com.android.support:support-v4:$supportLibraryVersion"
+    appcompatv7 = "com.android.support:appcompat-v7:$supportLibraryVersion"
+    constraintLayout = "com.android.support.constraint:constraint-layout:1.0.2"
+    archComponents = "android.arch.lifecycle:runtime:$archComponentsVersion"
+    archComponentsExtensions = "android.arch.lifecycle:extensions:$archComponentsVersion"
+    archComponentsCompiler = "android.arch.lifecycle:compiler:$archComponentsVersion"
+    testingSupportLib = "com.android.support.test:testing-support-lib:0.1"
+    runner = "com.android.support.test:runner:1.0.0"
+
+    // 3rd Party Libraries
+    autoservice = "com.google.auto.service:auto-service:$autoserviceVersion"
+    javapoet = "com.squareup:javapoet:$javapoetVersion"
+    espressoCore = "com.android.support.test.espresso:espresso-core:$espressoVersion"
+    junit = "junit:junit:4.12"
+}

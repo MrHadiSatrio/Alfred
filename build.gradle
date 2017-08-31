@@ -1,0 +1,41 @@
+buildscript {
+
+    apply from: rootProject.file("gradle/versions.gradle")
+    apply from: rootProject.file("gradle/dependencies.gradle")
+
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath androidToolsPlugin
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    allprojects.each { project ->
+        delete project.buildDir
+    }
+}
+
+task zip(type: Zip) {
+    from project.projectDir
+    exclude '.gradle'
+    exclude '.idea'
+    exclude '.okbuck'
+    exclude 'zips'
+    exclude 'build'
+    exclude '**/build'
+    exclude 'local.properties'
+    exclude '*.iml'
+    archiveName project.name + " (" + new Date().format("yyyyMMddHHmmss") + ").zip"
+    destinationDir file(project.projectDir.path + "/zips")
+}

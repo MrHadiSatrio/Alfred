@@ -1,0 +1,35 @@
+ext {
+
+    // Alfred Versions
+    alfredAnnotationsVersion = "1.0.0-RC.1"
+    alfredCompilerVersion = "1.0.0-RC.1"
+
+    // Demo App-Related Versions
+    demoVersionCode = 1
+    demoVersionName = "1.0.0-RC.1"
+    minSdkVersion = 14
+    targetSdkVersion = 26
+    compileSdkVersion = 26
+
+    // Build-Related Versions
+    buildToolsVersion = "26.0.1"
+    sourceCompatibilityVersion = "1.7" // JavaVersion.VERSION_1_7
+    targetCompatibilityVersion = "1.7" // JavaVersion.VERSION_1_7
+
+    // Plugins / Build-Level Versions
+    androidGradleVersion = "3.0.0-beta2"
+
+    // 1st Party Android Library Versions
+    supportLibraryVersion = "26.0.1"
+    constraintLayoutVersion = "1.0.2"
+    archComponentsVersion = "1.0.0-alpha9"
+
+    // 3rd Party Library Versions
+    autoserviceVersion = "1.0-rc3"
+    javapoetVersion = "1.9.0"
+
+    // Test-Related Library Versions
+    junitVersion = "4.12"
+    mockitoVersion = "2.8.47"
+    espressoVersion = "3.0.0"
+}

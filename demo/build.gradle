@@ -1,0 +1,46 @@
+apply plugin: 'com.android.application'
+
+android {
+
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+
+    defaultConfig {
+
+        applicationId "com.hadisatrio.apps.android.alfreddemo"
+
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion targetSdkVersion
+        versionCode rootProject.demoVersionCode
+        versionName rootProject.demoVersionName
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+
+    implementation rootProject.supportv4
+    implementation rootProject.appcompatv7
+    implementation rootProject.constraintLayout
+
+    implementation rootProject.archComponents
+    implementation rootProject.archComponentsExtensions
+    annotationProcessor rootProject.archComponentsCompiler
+
+    implementation rootProject.alfredAnnotations
+    annotationProcessor rootProject.alfredCompiler
+
+    testImplementation rootProject.junit
+    androidTestImplementation rootProject.runner
+    androidTestImplementation rootProject.espressoCore
+}
