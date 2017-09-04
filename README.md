@@ -36,6 +36,52 @@ Alfred – Android `ViewModel` instantiation made effortless
 ```
 
 
+### That looks neat. What do I need to do?
+
+Getting Alfred to automagically simplify your `ViewModel` instantiation is dead simple:
+
+1. Make sure your `ViewModel` has a constructor containing all the things it needs supplied as parameters:
+
+```
+   public final class SomeViewModel extends ViewModel {
+   
+      private final int someInt;
+      private final String someString;
+      private final SomeClass someClass;
+      
+      public SomeViewModel(int anInt, String aString, SomeClass yourClass) {
+         // Initiate the fields..
+      }
+      
+      ...
+   }
+```
+
+2. Annotate it with `@GeneratedProvider`:
+
+```
+   @GeneratedProvider
+   public final class SomeViewModel extends ViewModel {
+      ...
+   }
+```
+
+3. Build and voila! `SomeViewModelProvider` is ready to lighten up your day!
+
+```
+   SomeViewModel someViewModel = SomeViewModelProvider.get(99, "Problems", new ViewModelsAintOne());
+```
+
+***p.s.**, It looks even cooler in Kotlin:*
+
+```
+   @GeneratedProvider
+   class SomeViewModel(val anInt: Int, val aString: String, val someClass: SomeClass) : ViewModel() {
+      ...
+   }
+```
+
+
 ### Including `Alfred` to your project
 
 Include `Alfred` to your Gradle project by adding it as a dependency in your `build.gradle`:
