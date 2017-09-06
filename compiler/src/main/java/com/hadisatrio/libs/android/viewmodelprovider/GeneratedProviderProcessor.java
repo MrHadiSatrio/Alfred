@@ -17,6 +17,7 @@
 package com.hadisatrio.libs.android.viewmodelprovider;
 
 import com.google.auto.service.AutoService;
+import com.hadisatrio.libs.android.viewmodelprovider.internal.Pair;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -203,7 +204,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         final String packageName = getPackageName(typeElement);
         final String genClassName = typeElement.getSimpleName() + FACTORY_CLASS_SUFFIX;
-        final List<TypeMirror> ctorParams = getConstructorParamTypes(typeElement);
+        final List<Pair<TypeMirror, String>> ctorParams = getConstructorParameters(typeElement);
 
         // Define the fields based on previously queried constructor params.
         final List<FieldSpec> fieldSpecs = new ArrayList<>();
@@ -212,7 +213,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         for (int i = 0; i < ctorParams.size(); i++) {
             fieldSpecs.add(
                     FieldSpec.builder(
-                            TypeName.get(ctorParams.get(i)),
+                            TypeName.get(ctorParams.get(i).getLeft()),
                             VARIABLE_PREFIX + i,
                             Modifier.PRIVATE,
                             Modifier.FINAL
@@ -220,7 +221,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             );
 
             if (fieldTypesCsv.length() > 0) fieldTypesCsv.append(',');
-            fieldTypesCsv.append(TypeName.get(ctorParams.get(i))).append(".class");
+            fieldTypesCsv.append(TypeName.get(ctorParams.get(i).getLeft())).append(".class");
 
             if (fieldNamesCsv.length() > 0) fieldNamesCsv.append(',');
             fieldNamesCsv.append(VARIABLE_PREFIX).append(i);
@@ -230,7 +231,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final MethodSpec.Builder ctorSpecBuilder = MethodSpec.constructorBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
             ctorSpecBuilder.addParameter(
-                    TypeName.get(ctorParams.get(i)),
+                    TypeName.get(ctorParams.get(i).getLeft()),
                     PARAMS_PREFIX + i
             );
 
@@ -285,13 +286,13 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         return pkg.getQualifiedName().toString();
     }
 
-    private List<TypeMirror> getConstructorParamTypes(TypeElement typeElement) {
-        final List<TypeMirror> subjectCtorParams = new ArrayList<>();
+    private List<Pair<TypeMirror, String>> getConstructorParameters(TypeElement typeElement) {
+        final List<Pair<TypeMirror, String>> subjectCtorParams = new ArrayList<>();
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.CONSTRUCTOR) {
                 final ExecutableElement ctor = ((ExecutableElement) element);
                 for (VariableElement ctorParameter : ctor.getParameters()) {
-                    subjectCtorParams.add(ctorParameter.asType());
+                    subjectCtorParams.add(new Pair<>(ctorParameter.asType(), ctorParameter.getSimpleName().toString()));
                 }
             }
         }
@@ -303,7 +304,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         final String packageName = getPackageName(typeElement);
         final String genClassName = typeElement.getSimpleName() + PROVIDER_CLASS_SUFFIX;
-        final List<TypeMirror> subjectCtorParams = getConstructorParamTypes(typeElement);
+        final List<Pair<TypeMirror, String>> subjectCtorParams = getConstructorParameters(typeElement);
         final Class viewModelProviderClass = Class.forName(VIEW_MODEL_PROVIDERS_CLASS_NAME);
 
         final StringBuilder ctorParamNamesCsv = new StringBuilder();
@@ -318,7 +319,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME), "activity");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
-            activityGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i)), (PARAMS_PREFIX + (i + 1)));
+            activityGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), (PARAMS_PREFIX + (i + 1)));
         }
         activityGetBuilder.addStatement("return $T.of(activity, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec activityGet = activityGetBuilder.build();
@@ -329,7 +330,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_CLASS_NAME), "fragment");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
-            fragmentGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i)), (PARAMS_PREFIX + (i + 1)));
+            fragmentGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), (PARAMS_PREFIX + (i + 1)));
         }
         fragmentGetBuilder.addStatement("return $T.of(fragment, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec fragmentGet = fragmentGetBuilder.build();
