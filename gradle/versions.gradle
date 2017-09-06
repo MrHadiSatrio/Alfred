@@ -1,12 +1,12 @@
 ext {
 
     // Alfred Versions
-    alfredAnnotationsVersion = "1.0.0-RC.1"
-    alfredCompilerVersion = "1.0.0-RC.1"
+    alfredAnnotationsVersion = "1.0.0-RC.2"
+    alfredCompilerVersion = "1.0.0-RC.2"
 
     // Demo App-Related Versions
-    demoVersionCode = 1
-    demoVersionName = "1.0.0-RC.1"
+    demoVersionCode = 2
+    demoVersionName = "1.0.0-RC.2"
     minSdkVersion = 14
     targetSdkVersion = 26
     compileSdkVersion = 26
