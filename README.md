@@ -82,6 +82,36 @@ Getting Alfred to automagically simplify your `ViewModel` instantiation is dead 
 ```
 
 
+### Current limitation
+
+As of its current state, `Alfred` is limited to process only the first constructor declared on each `ViewModel`.
+You could override this behaviour by explicitly annotating the constructor you want it to process instead with `@Main`:
+
+```
+   @GeneratedProvider
+   public final class SomeViewModel extends ViewModel {
+   
+      private final int someInt;
+      private final String someString;
+      private final SomeClass someClass;
+      private final SomeEnum someEnum;
+      
+      public SomeViewModel(int anInt, String aString, SomeClass yourClass) {
+         this(anInt, aString, yourClass, SomeEnum.NONE);
+      }
+      
+      @Main /* Tells Alfred to process this instead of the first one above. */
+      public SomeViewModel(int anInt, String aString, SomeClass yourClass, SomeEnum someEnum) {
+         ...
+      }
+      
+      ...
+   }
+```
+
+Please note that there could only be one `@Main`-annotated constructor declared in your `ViewModel`.
+
+
 ### Including `Alfred` to your project
 
 Include `Alfred` to your Gradle project by adding it as a dependency in your `build.gradle`:
