@@ -211,9 +211,11 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final StringBuilder fieldTypesCsv = new StringBuilder();
         final StringBuilder fieldNamesCsv = new StringBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
+            final TypeName paramType = TypeName.get(ctorParams.get(i).getLeft());
+
             fieldSpecs.add(
                     FieldSpec.builder(
-                            TypeName.get(ctorParams.get(i).getLeft()),
+                            paramType,
                             VARIABLE_PREFIX + i,
                             Modifier.PRIVATE,
                             Modifier.FINAL
@@ -221,7 +223,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             );
 
             if (fieldTypesCsv.length() > 0) fieldTypesCsv.append(',');
-            fieldTypesCsv.append(TypeName.get(ctorParams.get(i).getLeft())).append(".class");
+            fieldTypesCsv.append(paramType).append(".class");
 
             if (fieldNamesCsv.length() > 0) fieldNamesCsv.append(',');
             fieldNamesCsv.append(VARIABLE_PREFIX).append(i);
@@ -303,6 +305,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             throws IOException, ClassNotFoundException, NoPackageNameException {
 
         final String packageName = getPackageName(typeElement);
+        final TypeName typeName = TypeName.get(typeElement.asType());
         final String genClassName = typeElement.getSimpleName() + PROVIDER_CLASS_SUFFIX;
         final List<Pair<TypeMirror, String>> subjectCtorParams = getConstructorParameters(typeElement);
         final Class viewModelProviderClass = Class.forName(VIEW_MODEL_PROVIDERS_CLASS_NAME);
@@ -315,7 +318,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         // Generate `get()` method to be called from activities.
         final MethodSpec.Builder activityGetBuilder = MethodSpec.methodBuilder("get")
-                .returns(TypeName.get(typeElement.asType()))
+                .returns(typeName)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME), "activity");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
@@ -326,7 +329,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         // Generate `get()` method to be called from fragments.
         final MethodSpec.Builder fragmentGetBuilder = MethodSpec.methodBuilder("get")
-                .returns(TypeName.get(typeElement.asType()))
+                .returns(typeName)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_CLASS_NAME), "fragment");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
