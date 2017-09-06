@@ -8,13 +8,13 @@
 
 ### Why should I use it?
 
-```
+```java
    // It's so you can just do this...
    
    SomeViewModel viewModel = SomeViewModelProvider.get(this, "...", 0L);
 ```
 
-```
+```java
    // Instead this...
    
    SomeViewModel viewModel = SomeViewModelProviders.of(this).get(SomeViewModel.class);
@@ -22,7 +22,7 @@
    viewModel.setEffGiven(1L);
 ```
 
-```
+```java
    // Or this...
    
    SomeViewModel viewModel = ViewModelProviders.of(this, new CustomViewModelFactory("...", 1000L)).get(SomeViewModel.class);
@@ -42,7 +42,7 @@ Getting `Alfred` to simplify your `ViewModel` instantiation is simple:
 
 1. Make sure your `ViewModel` has a constructor containing all the things it needs supplied as parameters:
 
-```
+```java
    public final class SomeViewModel extends ViewModel {
    
       private final int someInt;
@@ -59,7 +59,7 @@ Getting `Alfred` to simplify your `ViewModel` instantiation is simple:
 
 2. Annotate the class with `@GeneratedProvider`:
 
-```
+```java
    @GeneratedProvider
    public final class SomeViewModel extends ViewModel {
       ...
@@ -68,7 +68,7 @@ Getting `Alfred` to simplify your `ViewModel` instantiation is simple:
 
 3. Build and voila!
 
-```
+```java
    SomeViewModel viewModel = SomeViewModelProvider.get(99, "Problems", new ViewModelsAintOne());
 ```
 
@@ -78,7 +78,7 @@ Getting `Alfred` to simplify your `ViewModel` instantiation is simple:
 As of its current state, `Alfred` is limited to process only the first constructor declared on each `ViewModel`.
 You could override this behavior by explicitly annotating the constructor you want it to process instead with `@Main`:
 
-```
+```java
    @GeneratedProvider
    public final class SomeViewModel extends ViewModel {
    
@@ -107,7 +107,7 @@ Please note that there could only be one `@Main`-annotated constructor declared 
 
 Include `Alfred` to your Gradle project by adding it as a dependency in your `build.gradle`:
 
-```
+```groovy
    apply plugin: 'com.neenbedankt.android-apt'
 
    repositories {
