@@ -23,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 public final class SeeAlfredInAction extends AppCompatActivity {
 
     private DopeViewModel dopeViewModel;
+    private AnotherDopeViewModel anotherDopeViewModel;
     private LameViewModel lameViewModel;
     private EvenLamerViewModel evenLamerViewModel;
 
@@ -32,8 +33,9 @@ public final class SeeAlfredInAction extends AppCompatActivity {
 
         setContentView(R.layout.activity_see_alfred_in_action);
 
-        // This is dope...
+        // These are dope...
         dopeViewModel = DopeViewModelProvider.get(this, this, 0L);
+        anotherDopeViewModel = AnotherDopeViewModelProvider.get(this, this, 0L, "");
 
         // ...this is lame..
         lameViewModel = ViewModelProviders.of(this, new CustomViewModelFactory(this, 0L)).get(LameViewModel.class);
