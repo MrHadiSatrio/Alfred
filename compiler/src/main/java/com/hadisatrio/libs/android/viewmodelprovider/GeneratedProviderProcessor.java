@@ -310,7 +310,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final StringBuilder ctorParamNamesCsv = new StringBuilder();
         for (int i = 0; i < subjectCtorParams.size(); i++) {
             if (ctorParamNamesCsv.length() > 0) ctorParamNamesCsv.append(',');
-            ctorParamNamesCsv.append(PARAMS_PREFIX).append(i + 1);
+            ctorParamNamesCsv.append(subjectCtorParams.get(i).getRight());
         }
 
         // Generate `get()` method to be called from activities.
@@ -319,7 +319,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME), "activity");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
-            activityGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), (PARAMS_PREFIX + (i + 1)));
+            activityGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), subjectCtorParams.get(i).getRight());
         }
         activityGetBuilder.addStatement("return $T.of(activity, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec activityGet = activityGetBuilder.build();
@@ -330,7 +330,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess(FRAGMENT_CLASS_NAME), "fragment");
         for (int i = 0; i < subjectCtorParams.size(); i++) {
-            fragmentGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), (PARAMS_PREFIX + (i + 1)));
+            fragmentGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), subjectCtorParams.get(i).getRight());
         }
         fragmentGetBuilder.addStatement("return $T.of(fragment, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec fragmentGet = fragmentGetBuilder.build();
