@@ -129,12 +129,26 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             } catch (IOException | ClassNotFoundException | NoPackageNameException e) {
                 error("Error while generating factory for class %s. Cause: %s.", typeElement, e);
                 return true; // Error message printed, exit processing.
+            } catch (DuplicateMainConstructorException e) {
+                error(
+                        annotatedElement,
+                        "Only one constructor can be annotated with @%s in a given class.",
+                        Main.class.getSimpleName()
+                );
+                return true; // Error message printed, exit processing.
             }
 
             try {
                 generateProvider(typeElement);
             } catch (IOException | ClassNotFoundException | NoPackageNameException e) {
                 error("Error while generating provider for class %s. Cause: %s.", typeElement, e);
+                return true; // Error message printed, exit processing.
+            } catch (DuplicateMainConstructorException e) {
+                error(
+                        annotatedElement,
+                        "Only one constructor can be annotated with @%s in a given class.",
+                        Main.class.getSimpleName()
+                );
                 return true; // Error message printed, exit processing.
             }
         }
@@ -200,7 +214,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
     }
 
     private void generateFactory(TypeElement typeElement)
-            throws IOException, ClassNotFoundException, NoPackageNameException {
+            throws IOException, ClassNotFoundException, NoPackageNameException, DuplicateMainConstructorException {
 
         final String packageName = getPackageName(typeElement);
         final String genClassName = typeElement.getSimpleName() + FACTORY_CLASS_SUFFIX;
@@ -288,21 +302,36 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         return pkg.getQualifiedName().toString();
     }
 
-    private List<Pair<TypeMirror, String>> getConstructorParameters(TypeElement typeElement) {
+    private List<Pair<TypeMirror, String>> getConstructorParameters(TypeElement typeElement)
+            throws DuplicateMainConstructorException {
         final List<Pair<TypeMirror, String>> subjectCtorParams = new ArrayList<>();
+
+        ExecutableElement mainCtor = null;
         for (Element element : typeElement.getEnclosedElements()) {
             if (element.getKind() == ElementKind.CONSTRUCTOR) {
-                final ExecutableElement ctor = ((ExecutableElement) element);
-                for (VariableElement ctorParameter : ctor.getParameters()) {
-                    subjectCtorParams.add(new Pair<>(ctorParameter.asType(), ctorParameter.getSimpleName().toString()));
+                if (mainCtor == null) {
+                    mainCtor = ((ExecutableElement) element);
+                }
+                if (element.getAnnotation(Main.class) != null) {
+                    if (mainCtor.getAnnotation(Main.class) != null) {
+                        throw new DuplicateMainConstructorException();
+                    }
+                    mainCtor = ((ExecutableElement) element);
                 }
             }
         }
+
+        if (mainCtor != null) {
+            for (VariableElement ctorParameter : mainCtor.getParameters()) {
+                subjectCtorParams.add(new Pair<>(ctorParameter.asType(), ctorParameter.getSimpleName().toString()));
+            }
+        }
+
         return subjectCtorParams;
     }
 
     private void generateProvider(TypeElement typeElement)
-            throws IOException, ClassNotFoundException, NoPackageNameException {
+            throws IOException, ClassNotFoundException, NoPackageNameException, DuplicateMainConstructorException {
 
         final String packageName = getPackageName(typeElement);
         final TypeName typeName = TypeName.get(typeElement.asType());
