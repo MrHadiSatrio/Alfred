@@ -225,7 +225,13 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final StringBuilder fieldTypesCsv = new StringBuilder();
         final StringBuilder fieldNamesCsv = new StringBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
-            final TypeName paramType = TypeName.get(ctorParams.get(i).getLeft());
+            TypeName paramType = TypeName.get(ctorParams.get(i).getLeft());
+
+            // Type-erasure. Not doing this will break factory-generation for
+            // targets with parameterized type constructor params.
+            if (paramType instanceof ParameterizedTypeName) {
+                paramType = ((ParameterizedTypeName) paramType).rawType;
+            }
 
             fieldSpecs.add(
                     FieldSpec.builder(
