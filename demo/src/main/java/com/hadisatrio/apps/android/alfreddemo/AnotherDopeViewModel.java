@@ -22,21 +22,26 @@ import android.content.Context;
 import com.hadisatrio.libs.android.viewmodelprovider.GeneratedProvider;
 import com.hadisatrio.libs.android.viewmodelprovider.Main;
 
+import java.util.Collections;
+import java.util.List;
+
 @GeneratedProvider
 public final class AnotherDopeViewModel extends ViewModel {
 
     private final Context context;
     private final Long fucksGiven;
     private final String whatNot;
+    private final List<Integer> someNumbers;
 
     public AnotherDopeViewModel(Context context, Long fucksGiven) {
-        this(context, fucksGiven, "");
+        this(context, fucksGiven, "", Collections.<Integer>emptyList());
     }
 
     @Main
-    public AnotherDopeViewModel(Context context, Long fucksGiven, String whatNot) {
+    public AnotherDopeViewModel(Context context, Long fucksGiven, String whatNot, List<Integer> someNumbers) {
         this.context = context;
         this.fucksGiven = fucksGiven;
         this.whatNot = whatNot;
+        this.someNumbers = someNumbers;
     }
 }
