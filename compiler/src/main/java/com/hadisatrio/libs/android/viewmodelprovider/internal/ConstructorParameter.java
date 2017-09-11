@@ -23,9 +23,9 @@ import javax.lang.model.type.TypeMirror;
 
 public class ConstructorParameter {
 
-    private Class<?> nullabilityClass;
-    private TypeMirror type;
-    private String name;
+    private final Class<?> nullabilityClass;
+    private final TypeMirror type;
+    private final String name;
 
     public ConstructorParameter(@Nullable Class<?> nullabilityClass, @NonNull TypeMirror type,
                                 @NonNull String name) {

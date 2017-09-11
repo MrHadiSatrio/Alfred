@@ -67,6 +67,9 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
     private static final String FRAGMENT_ACTIVITY_CLASS_NAME = "android.support.v4.app.FragmentActivity";
     private static final String FRAGMENT_CLASS_NAME = "android.support.v4.app.Fragment";
 
+    private static final String NON_NULL_NAME = "NonNull";
+    private static final String NULLABLE_NAME = "Nullable";
+
     private static final String PROVIDER_CLASS_SUFFIX = "Provider";
     private static final String FACTORY_CLASS_SUFFIX = "Factory";
     private static final String PARAMS_PREFIX = "p";
@@ -339,9 +342,9 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 for (AnnotationMirror annotationMirror : ctorParameter.getAnnotationMirrors()) {
                     String name = annotationMirror.getAnnotationType().asElement().getSimpleName().toString();
 
-                    if (name.equalsIgnoreCase("NonNull")) {
+                    if (name.equalsIgnoreCase(NON_NULL_NAME)) {
                         nullabilityClass = NonNull.class;
-                    } else if (name.equalsIgnoreCase("Nullable")) {
+                    } else if (name.equalsIgnoreCase(NULLABLE_NAME)) {
                         nullabilityClass = Nullable.class;
                     }
                 }
