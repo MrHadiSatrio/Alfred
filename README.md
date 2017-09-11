@@ -115,8 +115,8 @@ Include `Alfred` to your Gradle project by adding it as a dependency in your `bu
    }
 
    dependencies {
-       compile 'com.hadisatrio.Alfred:annotations:v1.0.0-RC.2'
-       apt 'com.hadisatrio.Alfred:compiler:v1.0.0-RC.2'
+       compile 'com.hadisatrio.Alfred:annotations:v1.0.0-RC.3'
+       apt 'com.hadisatrio.Alfred:compiler:v1.0.0-RC.3'
    }
 ```
 
