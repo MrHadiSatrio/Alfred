@@ -16,19 +16,22 @@
 
 package com.hadisatrio.libs.android.viewmodelprovider;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.google.auto.service.AutoService;
-import com.hadisatrio.libs.android.viewmodelprovider.internal.Pair;
+import com.hadisatrio.libs.android.viewmodelprovider.internal.ConstructorParameter;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,6 +44,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -218,13 +222,13 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         final String packageName = getPackageName(typeElement);
         final String genClassName = typeElement.getSimpleName() + FACTORY_CLASS_SUFFIX;
-        final List<Pair<TypeMirror, String>> ctorParams = getConstructorParameters(typeElement);
+        final List<ConstructorParameter> ctorParams = getConstructorParameters(typeElement);
 
         // Define the fields based on previously queried constructor params.
         final List<FieldSpec> fieldSpecs = new ArrayList<>();
         final StringBuilder fieldNamesCsv = new StringBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
-            TypeName paramType = TypeName.get(ctorParams.get(i).getLeft());
+            TypeName paramType = TypeName.get(ctorParams.get(i).getType());
 
             // Type-erasure. Not doing this will break factory-generation for
             // targets with parameterized type constructor params.
@@ -248,10 +252,17 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         // Define the constructor of the generated class.
         final MethodSpec.Builder ctorSpecBuilder = MethodSpec.constructorBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
-            ctorSpecBuilder.addParameter(
-                    TypeName.get(ctorParams.get(i).getLeft()),
+            final Class<?> nullabilityClass = ctorParams.get(i).getNullabilityClass();
+            final ParameterSpec.Builder parameterSpecBuilder = ParameterSpec.builder(
+                    TypeName.get(ctorParams.get(i).getType()),
                     PARAMS_PREFIX + i
             );
+
+            if (nullabilityClass != null) {
+                parameterSpecBuilder.addAnnotation(nullabilityClass);
+            }
+
+            ctorSpecBuilder.addParameter(parameterSpecBuilder.build());
 
             // Create statement to assign parameter value to its appropriate field.
             ctorSpecBuilder.addStatement(
@@ -262,15 +273,21 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         }
         final MethodSpec ctorSpec = ctorSpecBuilder.build();
 
+        final TypeVariableName typeVariableName = TypeVariableName.get("T", Class.forName(VIEW_MODEL_CLASS_NAME));
+        final ParameterSpec.Builder modelClassParameterSpecBuilder = ParameterSpec.builder(
+                ParameterizedTypeName.get(ClassName.get(Class.class), typeVariableName),
+                "modelClass"
+        );
+
         // Define the `create()` method that will be called by ViewModelProviders
         // to actually instantiate the ViewModel.
-        final TypeVariableName typeVariableName = TypeVariableName.get("T", Class.forName(VIEW_MODEL_CLASS_NAME));
         final MethodSpec createSpec = MethodSpec.methodBuilder("create")
+                .addAnnotation(NonNull.class)
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addTypeVariable(typeVariableName)
                 .returns(typeVariableName)
-                .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), typeVariableName), "modelClass")
+                .addParameter(modelClassParameterSpecBuilder.addAnnotation(NonNull.class).build())
                 .addStatement("return (T) new $T($L)", typeElement, fieldNamesCsv)
                 .build();
 
@@ -296,9 +313,9 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         return pkg.getQualifiedName().toString();
     }
 
-    private List<Pair<TypeMirror, String>> getConstructorParameters(TypeElement typeElement)
+    private List<ConstructorParameter> getConstructorParameters(TypeElement typeElement)
             throws DuplicateMainConstructorException {
-        final List<Pair<TypeMirror, String>> subjectCtorParams = new ArrayList<>();
+        final List<ConstructorParameter> subjectCtorParams = new ArrayList<>();
 
         ExecutableElement mainCtor = null;
         for (Element element : typeElement.getEnclosedElements()) {
@@ -317,7 +334,20 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         if (mainCtor != null) {
             for (VariableElement ctorParameter : mainCtor.getParameters()) {
-                subjectCtorParams.add(new Pair<>(ctorParameter.asType(), ctorParameter.getSimpleName().toString()));
+                Class<?> nullabilityClass = null;
+
+                for (AnnotationMirror annotationMirror : ctorParameter.getAnnotationMirrors()) {
+                    String name = annotationMirror.getAnnotationType().asElement().getSimpleName().toString();
+
+                    if (name.equalsIgnoreCase("NonNull")) {
+                        nullabilityClass = NonNull.class;
+                    } else if (name.equalsIgnoreCase("Nullable")) {
+                        nullabilityClass = Nullable.class;
+                    }
+                }
+
+                subjectCtorParams.add(new ConstructorParameter(nullabilityClass, ctorParameter.asType(),
+                        ctorParameter.getSimpleName().toString()));
             }
         }
 
@@ -330,34 +360,50 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final String packageName = getPackageName(typeElement);
         final TypeName typeName = TypeName.get(typeElement.asType());
         final String genClassName = typeElement.getSimpleName() + PROVIDER_CLASS_SUFFIX;
-        final List<Pair<TypeMirror, String>> subjectCtorParams = getConstructorParameters(typeElement);
+        final List<ConstructorParameter> subjectCtorParams = getConstructorParameters(typeElement);
         final Class viewModelProviderClass = Class.forName(VIEW_MODEL_PROVIDERS_CLASS_NAME);
 
         final StringBuilder ctorParamNamesCsv = new StringBuilder();
         for (int i = 0; i < subjectCtorParams.size(); i++) {
             if (ctorParamNamesCsv.length() > 0) ctorParamNamesCsv.append(',');
-            ctorParamNamesCsv.append(subjectCtorParams.get(i).getRight());
+            ctorParamNamesCsv.append(subjectCtorParams.get(i).getName());
         }
+
+        final ParameterSpec.Builder activityParameterSpecBuilder = ParameterSpec.builder(
+                ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME),
+                "activity"
+        );
 
         // Generate `get()` method to be called from activities.
         final MethodSpec.Builder activityGetBuilder = MethodSpec.methodBuilder("get")
                 .returns(typeName)
+                .addAnnotation(NonNull.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME), "activity");
-        for (int i = 0; i < subjectCtorParams.size(); i++) {
-            activityGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), subjectCtorParams.get(i).getRight());
+                .addParameter(activityParameterSpecBuilder.addAnnotation(NonNull.class).build());
+
+        for (ParameterSpec parameterSpec : buildParameterList(subjectCtorParams)) {
+            activityGetBuilder.addParameter(parameterSpec);
         }
+
         activityGetBuilder.addStatement("return $T.of(activity, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec activityGet = activityGetBuilder.build();
+
+        final ParameterSpec.Builder fragmentParameterSpecBuilder = ParameterSpec.builder(
+                ClassName.bestGuess(FRAGMENT_CLASS_NAME),
+                "fragment"
+        );
 
         // Generate `get()` method to be called from fragments.
         final MethodSpec.Builder fragmentGetBuilder = MethodSpec.methodBuilder("get")
                 .returns(typeName)
+                .addAnnotation(NonNull.class)
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(ClassName.bestGuess(FRAGMENT_CLASS_NAME), "fragment");
-        for (int i = 0; i < subjectCtorParams.size(); i++) {
-            fragmentGetBuilder.addParameter(TypeName.get(subjectCtorParams.get(i).getLeft()), subjectCtorParams.get(i).getRight());
+                .addParameter(fragmentParameterSpecBuilder.addAnnotation(NonNull.class).build());
+
+        for (ParameterSpec parameterSpec : buildParameterList(subjectCtorParams)) {
+            fragmentGetBuilder.addParameter(parameterSpec);
         }
+
         fragmentGetBuilder.addStatement("return $T.of(fragment, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
         final MethodSpec fragmentGet = fragmentGetBuilder.build();
 
@@ -371,5 +417,25 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         // Write the class.
         JavaFile.builder(packageName, provider)
                 .build().writeTo(filer);
+    }
+
+    private List<ParameterSpec> buildParameterList(List<ConstructorParameter> subjectCtorParams) {
+        final List<ParameterSpec> result = new ArrayList<>(subjectCtorParams.size());
+
+        for (int i = 0; i < subjectCtorParams.size(); i++) {
+            final Class<?> nullabilityClass = subjectCtorParams.get(i).getNullabilityClass();
+            final ParameterSpec.Builder parameterSpecBuilder = ParameterSpec.builder(
+                    TypeName.get(subjectCtorParams.get(i).getType()),
+                    subjectCtorParams.get(i).getName()
+            );
+
+            if (nullabilityClass != null) {
+                parameterSpecBuilder.addAnnotation(nullabilityClass);
+            }
+
+            result.add(parameterSpecBuilder.build());
+        }
+
+        return result;
     }
 }

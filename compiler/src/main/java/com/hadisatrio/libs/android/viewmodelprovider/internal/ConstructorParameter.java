@@ -14,23 +14,35 @@
  *    limitations under the License.
  */
 
-package com.hadisatrio.apps.android.alfreddemo;
+package com.hadisatrio.libs.android.viewmodelprovider.internal;
 
-import android.arch.lifecycle.ViewModel;
-import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.hadisatrio.libs.android.viewmodelprovider.GeneratedProvider;
+import javax.lang.model.type.TypeMirror;
 
-@GeneratedProvider
-public final class DopeViewModel extends ViewModel {
+public class ConstructorParameter {
 
-    private final Context context;
-    private final Long fucksGiven;
+    private Class<?> nullabilityClass;
+    private TypeMirror type;
+    private String name;
 
-    public DopeViewModel(@NonNull Context context, @Nullable Long fucksGiven) {
-        this.context = context;
-        this.fucksGiven = fucksGiven;
+    public ConstructorParameter(@Nullable Class<?> nullabilityClass, @NonNull TypeMirror type,
+                                @NonNull String name) {
+        this.nullabilityClass = nullabilityClass;
+        this.type = type;
+        this.name = name;
+    }
+
+    @Nullable public Class<?> getNullabilityClass() {
+        return nullabilityClass;
+    }
+
+    @NonNull public TypeMirror getType() {
+        return type;
+    }
+
+    @NonNull public String getName() {
+        return name;
     }
 }
