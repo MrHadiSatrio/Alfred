@@ -222,7 +222,6 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
         // Define the fields based on previously queried constructor params.
         final List<FieldSpec> fieldSpecs = new ArrayList<>();
-        final StringBuilder fieldTypesCsv = new StringBuilder();
         final StringBuilder fieldNamesCsv = new StringBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
             TypeName paramType = TypeName.get(ctorParams.get(i).getLeft());
@@ -241,9 +240,6 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                             Modifier.FINAL
                     ).build()
             );
-
-            if (fieldTypesCsv.length() > 0) fieldTypesCsv.append(',');
-            fieldTypesCsv.append(paramType).append(".class");
 
             if (fieldNamesCsv.length() > 0) fieldNamesCsv.append(',');
             fieldNamesCsv.append(VARIABLE_PREFIX).append(i);
@@ -275,15 +271,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .addTypeVariable(typeVariableName)
                 .returns(typeVariableName)
                 .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), typeVariableName), "modelClass")
-                .beginControlFlow("if ($T.class.isAssignableFrom($L))", typeElement, "modelClass")
-                .beginControlFlow("try")
-                .addStatement("return $L.getConstructor($L).newInstance($L)", "modelClass", fieldTypesCsv, fieldNamesCsv)
-                .nextControlFlow("catch ($T | $T | $T | $T e)", NoSuchMethodException.class, IllegalAccessException.class, InstantiationException.class, InvocationTargetException.class)
-                .addStatement("throw new $T(\"Couldn't create an instance of $T\", e)", RuntimeException.class, typeElement)
-                .endControlFlow()
-                .nextControlFlow("else")
-                .addStatement("throw new $T(\"Couldn't create an instance of $T\")", RuntimeException.class, typeElement)
-                .endControlFlow()
+                .addStatement("return (T) new $T($L)", typeElement, fieldNamesCsv)
                 .build();
 
         // Define the class using the previously defined specs.
