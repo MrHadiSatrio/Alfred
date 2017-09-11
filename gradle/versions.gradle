@@ -1,8 +1,8 @@
 ext {
 
     // Alfred Versions
-    alfredAnnotationsVersion = "1.0.0-RC.2"
-    alfredCompilerVersion = "1.0.0-RC.2"
+    alfredAnnotationsVersion = "1.0.0-RC.3"
+    alfredCompilerVersion = "1.0.0-RC.3"
 
     // Demo App-Related Versions
     demoVersionCode = 2
