@@ -1,8 +1,8 @@
 ext {
 
     // Alfred Versions
-    alfredAnnotationsVersion = "1.0.0-RC.2"
-    alfredCompilerVersion = "1.0.0-RC.2"
+    alfredAnnotationsVersion = "1.0.0-RC.3"
+    alfredCompilerVersion = "1.0.0-RC.3"
 
     // Demo App-Related Versions
     demoVersionCode = 2
@@ -17,7 +17,7 @@ ext {
     targetCompatibilityVersion = "1.7" // JavaVersion.VERSION_1_7
 
     // Plugins / Build-Level Versions
-    androidGradleVersion = "3.0.0-beta2"
+    androidGradleVersion = "3.0.0-beta5"
 
     // 1st Party Android Library Versions
     supportLibraryVersion = "26.0.1"

@@ -20,6 +20,8 @@ import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import java.util.Arrays;
+
 public final class SeeAlfredInAction extends AppCompatActivity {
 
     private DopeViewModel dopeViewModel;
@@ -35,7 +37,7 @@ public final class SeeAlfredInAction extends AppCompatActivity {
 
         // These are dope...
         dopeViewModel = DopeViewModelProvider.get(this, this, 0L);
-        anotherDopeViewModel = AnotherDopeViewModelProvider.get(this, this, 0L, "");
+        anotherDopeViewModel = AnotherDopeViewModelProvider.get(this, this, 0L, "", Arrays.asList(1, 2, 3));
 
         // ...this is lame..
         lameViewModel = ViewModelProviders.of(this, new CustomViewModelFactory(this, 0L)).get(LameViewModel.class);

@@ -34,7 +34,7 @@ public final class CustomViewModelFactory implements ViewModelProvider.Factory {
 
     @Override
     public <T extends ViewModel> T create(Class<T> modelClass) {
-        if (DopeViewModel.class.isAssignableFrom(modelClass)) {
+        if (LameViewModel.class.isAssignableFrom(modelClass)) {
             try {
                 return modelClass.getConstructor(android.content.Context.class, java.lang.Long.class)
                         .newInstance(context, fucksGiven);
