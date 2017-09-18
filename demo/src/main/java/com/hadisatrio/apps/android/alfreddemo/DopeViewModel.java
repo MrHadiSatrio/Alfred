@@ -18,6 +18,8 @@ package com.hadisatrio.apps.android.alfreddemo;
 
 import android.arch.lifecycle.ViewModel;
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.hadisatrio.libs.android.viewmodelprovider.GeneratedProvider;
 
@@ -27,7 +29,7 @@ public final class DopeViewModel extends ViewModel {
     private final Context context;
     private final Long fucksGiven;
 
-    public DopeViewModel(Context context, Long fucksGiven) {
+    public DopeViewModel(@NonNull Context context, @Nullable Long fucksGiven) {
         this.context = context;
         this.fucksGiven = fucksGiven;
     }
