@@ -13,6 +13,8 @@ repositories {
 
 dependencies {
 
+    implementation androidApi
+
     implementation alfredAnnotations
 
     implementation autoservice

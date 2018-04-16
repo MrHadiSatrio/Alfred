@@ -72,8 +72,6 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
 
     private static final String PROVIDER_CLASS_SUFFIX = "Provider";
     private static final String FACTORY_CLASS_SUFFIX = "Factory";
-    private static final String PARAMS_PREFIX = "p";
-    private static final String VARIABLE_PREFIX = "var";
 
     private Elements elementUtils;
     private Types typeUtils;
@@ -132,21 +130,9 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             }
 
             try {
-                generateFactory(typeElement);
-            } catch (IOException | ClassNotFoundException | NoPackageNameException e) {
-                error("Error while generating factory for class %s. Cause: %s.", typeElement, e);
-                return true; // Error message printed, exit processing.
-            } catch (DuplicateMainConstructorException e) {
-                error(
-                        annotatedElement,
-                        "Only one constructor can be annotated with @%s in a given class.",
-                        Main.class.getSimpleName()
-                );
-                return true; // Error message printed, exit processing.
-            }
-
-            try {
-                generateProvider(typeElement);
+                JavaFile.builder(getPackageName(typeElement), generateProvider(typeElement))
+                        .build()
+                        .writeTo(filer);
             } catch (IOException | ClassNotFoundException | NoPackageNameException e) {
                 error("Error while generating provider for class %s. Cause: %s.", typeElement, e);
                 return true; // Error message printed, exit processing.
@@ -220,10 +206,76 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         return true;
     }
 
-    private void generateFactory(TypeElement typeElement)
-            throws IOException, ClassNotFoundException, NoPackageNameException, DuplicateMainConstructorException {
+    private String getPackageName(TypeElement typeElement) throws NoPackageNameException {
+        final PackageElement pkg = elementUtils.getPackageOf(typeElement);
+        if (pkg.isUnnamed()) {
+            throw new NoPackageNameException(typeElement);
+        }
+        return pkg.getQualifiedName().toString();
+    }
 
-        final String packageName = getPackageName(typeElement);
+    private TypeSpec generateProvider(TypeElement typeElement)
+            throws ClassNotFoundException, DuplicateMainConstructorException {
+
+        final TypeName typeName = TypeName.get(typeElement.asType());
+        final String genClassName = typeElement.getSimpleName() + PROVIDER_CLASS_SUFFIX;
+        final List<ConstructorParameter> subjectCtorParams = getConstructorParameters(typeElement);
+        final Class viewModelProviderClass = Class.forName(VIEW_MODEL_PROVIDERS_CLASS_NAME);
+
+        final StringBuilder ctorParamNamesCsv = new StringBuilder();
+        for (int i = 0; i < subjectCtorParams.size(); i++) {
+            if (ctorParamNamesCsv.length() > 0) ctorParamNamesCsv.append(", ");
+            ctorParamNamesCsv.append(subjectCtorParams.get(i).getName());
+        }
+
+        final ParameterSpec.Builder activityParameterSpecBuilder = ParameterSpec.builder(
+                ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME),
+                "activity"
+        );
+
+        // Generate `get()` method to be called from activities.
+        final MethodSpec.Builder activityGetBuilder = MethodSpec.methodBuilder("get")
+                .returns(typeName)
+                .addAnnotation(NonNull.class)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(activityParameterSpecBuilder.addAnnotation(NonNull.class).build());
+
+        for (ParameterSpec parameterSpec : buildParameterList(subjectCtorParams)) {
+            activityGetBuilder.addParameter(parameterSpec);
+        }
+
+        activityGetBuilder.addStatement("return $T\n.of(activity, new $TFactory($L))\n.get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
+        final MethodSpec activityGet = activityGetBuilder.build();
+
+        final ParameterSpec.Builder fragmentParameterSpecBuilder = ParameterSpec.builder(
+                ClassName.bestGuess(FRAGMENT_CLASS_NAME),
+                "fragment"
+        );
+
+        // Generate `get()` method to be called from fragments.
+        final MethodSpec.Builder fragmentGetBuilder = MethodSpec.methodBuilder("get")
+                .returns(typeName)
+                .addAnnotation(NonNull.class)
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(fragmentParameterSpecBuilder.addAnnotation(NonNull.class).build());
+
+        fragmentGetBuilder.addParameters(buildParameterList(subjectCtorParams));
+
+        fragmentGetBuilder.addStatement("return $T\n.of(fragment, new $TFactory($L))\n.get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
+        final MethodSpec fragmentGet = fragmentGetBuilder.build();
+
+        // Define the class using the previously defined specs.
+        return TypeSpec.classBuilder(genClassName)
+                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                .addMethod(activityGet)
+                .addMethod(fragmentGet)
+                .addType(generateFactory(typeElement))
+                .build();
+    }
+
+    private TypeSpec generateFactory(TypeElement typeElement)
+            throws ClassNotFoundException, DuplicateMainConstructorException {
+
         final String genClassName = typeElement.getSimpleName() + FACTORY_CLASS_SUFFIX;
         final List<ConstructorParameter> ctorParams = getConstructorParameters(typeElement);
 
@@ -232,6 +284,7 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         final StringBuilder fieldNamesCsv = new StringBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
             TypeName paramType = TypeName.get(ctorParams.get(i).getType());
+            String paramName = ctorParams.get(i).getName();
 
             // Type-erasure. Not doing this will break factory-generation for
             // targets with parameterized type constructor params.
@@ -242,23 +295,25 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             fieldSpecs.add(
                     FieldSpec.builder(
                             paramType,
-                            VARIABLE_PREFIX + i,
+                            paramName,
                             Modifier.PRIVATE,
                             Modifier.FINAL
                     ).build()
             );
 
-            if (fieldNamesCsv.length() > 0) fieldNamesCsv.append(',');
-            fieldNamesCsv.append(VARIABLE_PREFIX).append(i);
+            if (fieldNamesCsv.length() > 0) fieldNamesCsv.append(", ");
+            fieldNamesCsv.append(paramName);
         }
 
         // Define the constructor of the generated class.
         final MethodSpec.Builder ctorSpecBuilder = MethodSpec.constructorBuilder();
         for (int i = 0; i < ctorParams.size(); i++) {
+            String paramName = ctorParams.get(i).getName();
+
             final Class<?> nullabilityClass = ctorParams.get(i).getNullabilityClass();
             final ParameterSpec.Builder parameterSpecBuilder = ParameterSpec.builder(
                     TypeName.get(ctorParams.get(i).getType()),
-                    PARAMS_PREFIX + i
+                    paramName
             );
 
             if (nullabilityClass != null) {
@@ -270,8 +325,8 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
             // Create statement to assign parameter value to its appropriate field.
             ctorSpecBuilder.addStatement(
                     "this.$L = $L",
-                    VARIABLE_PREFIX + i,
-                    PARAMS_PREFIX + i
+                    paramName,
+                    paramName
             );
         }
         final MethodSpec ctorSpec = ctorSpecBuilder.build();
@@ -295,25 +350,13 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
                 .build();
 
         // Define the class using the previously defined specs.
-        final TypeSpec factory = TypeSpec.classBuilder(genClassName)
+        return TypeSpec.classBuilder(genClassName)
                 .addSuperinterface(ClassName.bestGuess(VIEW_MODEL_FACTORY_CLASS_NAME))
-                .addModifiers(Modifier.FINAL)
+                .addModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
                 .addFields(fieldSpecs)
                 .addMethod(ctorSpec)
                 .addMethod(createSpec)
                 .build();
-
-        // Write the class.
-        JavaFile.builder(packageName, factory)
-                .build().writeTo(filer);
-    }
-
-    private String getPackageName(TypeElement typeElement) throws NoPackageNameException {
-        final PackageElement pkg = elementUtils.getPackageOf(typeElement);
-        if (pkg.isUnnamed()) {
-            throw new NoPackageNameException(typeElement);
-        }
-        return pkg.getQualifiedName().toString();
     }
 
     private List<ConstructorParameter> getConstructorParameters(TypeElement typeElement)
@@ -355,71 +398,6 @@ public final class GeneratedProviderProcessor extends AbstractProcessor {
         }
 
         return subjectCtorParams;
-    }
-
-    private void generateProvider(TypeElement typeElement)
-            throws IOException, ClassNotFoundException, NoPackageNameException, DuplicateMainConstructorException {
-
-        final String packageName = getPackageName(typeElement);
-        final TypeName typeName = TypeName.get(typeElement.asType());
-        final String genClassName = typeElement.getSimpleName() + PROVIDER_CLASS_SUFFIX;
-        final List<ConstructorParameter> subjectCtorParams = getConstructorParameters(typeElement);
-        final Class viewModelProviderClass = Class.forName(VIEW_MODEL_PROVIDERS_CLASS_NAME);
-
-        final StringBuilder ctorParamNamesCsv = new StringBuilder();
-        for (int i = 0; i < subjectCtorParams.size(); i++) {
-            if (ctorParamNamesCsv.length() > 0) ctorParamNamesCsv.append(',');
-            ctorParamNamesCsv.append(subjectCtorParams.get(i).getName());
-        }
-
-        final ParameterSpec.Builder activityParameterSpecBuilder = ParameterSpec.builder(
-                ClassName.bestGuess(FRAGMENT_ACTIVITY_CLASS_NAME),
-                "activity"
-        );
-
-        // Generate `get()` method to be called from activities.
-        final MethodSpec.Builder activityGetBuilder = MethodSpec.methodBuilder("get")
-                .returns(typeName)
-                .addAnnotation(NonNull.class)
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(activityParameterSpecBuilder.addAnnotation(NonNull.class).build());
-
-        for (ParameterSpec parameterSpec : buildParameterList(subjectCtorParams)) {
-            activityGetBuilder.addParameter(parameterSpec);
-        }
-
-        activityGetBuilder.addStatement("return $T.of(activity, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
-        final MethodSpec activityGet = activityGetBuilder.build();
-
-        final ParameterSpec.Builder fragmentParameterSpecBuilder = ParameterSpec.builder(
-                ClassName.bestGuess(FRAGMENT_CLASS_NAME),
-                "fragment"
-        );
-
-        // Generate `get()` method to be called from fragments.
-        final MethodSpec.Builder fragmentGetBuilder = MethodSpec.methodBuilder("get")
-                .returns(typeName)
-                .addAnnotation(NonNull.class)
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(fragmentParameterSpecBuilder.addAnnotation(NonNull.class).build());
-
-        for (ParameterSpec parameterSpec : buildParameterList(subjectCtorParams)) {
-            fragmentGetBuilder.addParameter(parameterSpec);
-        }
-
-        fragmentGetBuilder.addStatement("return $T.of(fragment, new $TFactory($L)).get($T.class)", viewModelProviderClass, typeElement, ctorParamNamesCsv, typeElement);
-        final MethodSpec fragmentGet = fragmentGetBuilder.build();
-
-        // Define the class using the previously defined specs.
-        final TypeSpec provider = TypeSpec.classBuilder(genClassName)
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addMethod(activityGet)
-                .addMethod(fragmentGet)
-                .build();
-
-        // Write the class.
-        JavaFile.builder(packageName, provider)
-                .build().writeTo(filer);
     }
 
     private List<ParameterSpec> buildParameterList(List<ConstructorParameter> subjectCtorParams) {
