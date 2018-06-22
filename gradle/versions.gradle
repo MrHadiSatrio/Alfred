@@ -8,28 +8,29 @@ ext {
     demoVersionCode = 2
     demoVersionName = "1.0.0-RC.2"
     minSdkVersion = 14
-    targetSdkVersion = 26
-    compileSdkVersion = 26
+    targetSdkVersion = 27
+    compileSdkVersion = 27
 
     // Build-Related Versions
-    buildToolsVersion = "26.0.1"
     sourceCompatibilityVersion = "1.7" // JavaVersion.VERSION_1_7
     targetCompatibilityVersion = "1.7" // JavaVersion.VERSION_1_7
 
     // Plugins / Build-Level Versions
-    androidGradleVersion = "3.0.0-beta5"
+    androidGradleVersion = "3.1.0"
 
     // 1st Party Android Library Versions
-    supportLibraryVersion = "26.0.1"
-    constraintLayoutVersion = "1.0.2"
-    archComponentsVersion = "1.0.0-alpha9"
+    androidApiVersion = "4.1.1.4"
+    supportLibraryVersion = "27.1.1"
+    constraintLayoutVersion = "1.1.0"
+    archComponentsVersion = "1.1.1"
 
     // 3rd Party Library Versions
-    autoserviceVersion = "1.0-rc3"
-    javapoetVersion = "1.9.0"
+    autoserviceVersion = "1.0-rc4"
+    javapoetVersion = "1.10.0"
 
     // Test-Related Library Versions
     junitVersion = "4.12"
-    mockitoVersion = "2.8.47"
-    espressoVersion = "3.0.0"
+    mockitoVersion = "2.18.2"
+    espressoVersion = "3.0.1"
+    testingSupportLibraryVersion = "1.0.1"
 }
